@@ -110,6 +110,24 @@ export class UsersService {
     };
   }
 
+  static async logout(token: string) {
+    // 1. Cek apakah session ada di tabel sessions
+    const [session] = await db
+      .select({ id: sessions.id })
+      .from(sessions)
+      .where(eq(sessions.token, token))
+      .limit(1);
+
+    if (!session) {
+      throw new Error("Unauthorized");
+    }
+
+    // 2. Hapus sesi dari database
+    await db.delete(sessions).where(eq(sessions.token, token));
+
+    return "OK";
+  }
+
   static async getAll() {
     return await db
       .select({
