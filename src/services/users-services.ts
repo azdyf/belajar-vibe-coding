@@ -73,6 +73,43 @@ export class UsersService {
     return token;
   }
 
+  static async getCurrentUser(token: string) {
+    // 1. Cari sesi berdasarkan token
+    const [session] = await db
+      .select()
+      .from(sessions)
+      .where(eq(sessions.token, token))
+      .limit(1);
+
+    if (!session) {
+      throw new Error("Unauthorized");
+    }
+
+    // 2. Cari data pengguna berdasarkan session.userId
+    const [user] = await db
+      .select({
+        id: users.id,
+        name: users.name,
+        email: users.email,
+        createdAt: users.createdAt,
+      })
+      .from(users)
+      .where(eq(users.id, session.userId))
+      .limit(1);
+
+    if (!user) {
+      throw new Error("Unauthorized");
+    }
+
+    // 3. Kembalikan data user tanpa password
+    return {
+      id: user.id,
+      name: user.name,
+      email: user.email,
+      created_at: user.createdAt.toISOString(),
+    };
+  }
+
   static async getAll() {
     return await db
       .select({
@@ -84,4 +121,3 @@ export class UsersService {
       .from(users);
   }
 }
-
