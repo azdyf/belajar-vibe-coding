@@ -170,4 +170,102 @@ describe("Users & Sessions API (Elysia + MySQL)", () => {
       expect(body).toEqual({ error: "Email atau Password Salah" });
     });
   });
+
+  describe("GET /api/users/current (Get Current User)", () => {
+    let validToken: string;
+
+    beforeEach(async () => {
+      // Buat user
+      await app.handle(
+        new Request("http://localhost/api/users", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            name: "fahmi",
+            email: testEmail,
+            password: testPassword,
+          }),
+        })
+      );
+
+      // Login untuk mendapatkan token
+      const loginRes = await app.handle(
+        new Request("http://localhost/api/users/login", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            email: testEmail,
+            password: testPassword,
+          }),
+        })
+      );
+
+      const loginJson: any = await loginRes.json();
+      validToken = loginJson.data;
+    });
+
+    it("1. Harus berhasil mendapatkan profil user saat ini dengan token valid", async () => {
+      const res = await app.handle(
+        new Request("http://localhost/api/users/current", {
+          method: "GET",
+          headers: {
+            Authorization: `Bearer ${validToken}`,
+          },
+        })
+      );
+
+      expect(res.status).toBe(200);
+      const body: any = await res.json();
+
+      expect(body.data).toBeDefined();
+      expect(body.data.name).toBe("fahmi");
+      expect(body.data.email).toBe(testEmail);
+      expect(typeof body.data.id).toBe("number");
+      expect(typeof body.data.created_at).toBe("string");
+      // Pastikan password tidak dibocorkan
+      expect(body.data.password).toBeUndefined();
+    });
+
+    it("2. Harus mengembalikan 401 Unauthorized jika header Authorization tidak ada", async () => {
+      const res = await app.handle(
+        new Request("http://localhost/api/users/current", {
+          method: "GET",
+        })
+      );
+
+      expect(res.status).toBe(401);
+      const body = await res.json();
+      expect(body).toEqual({ error: "Unauthorized" });
+    });
+
+    it("3. Harus mengembalikan 401 Unauthorized jika token tidak diawali Bearer", async () => {
+      const res = await app.handle(
+        new Request("http://localhost/api/users/current", {
+          method: "GET",
+          headers: {
+            Authorization: validToken,
+          },
+        })
+      );
+
+      expect(res.status).toBe(401);
+      const body = await res.json();
+      expect(body).toEqual({ error: "Unauthorized" });
+    });
+
+    it("4. Harus mengembalikan 401 Unauthorized jika token tidak valid atau tidak terdaftar", async () => {
+      const res = await app.handle(
+        new Request("http://localhost/api/users/current", {
+          method: "GET",
+          headers: {
+            Authorization: "Bearer token-palsu-12345",
+          },
+        })
+      );
+
+      expect(res.status).toBe(401);
+      const body = await res.json();
+      expect(body).toEqual({ error: "Unauthorized" });
+    });
+  });
 });
