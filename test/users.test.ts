@@ -30,3 +30,4 @@ describe("Users Route Validation", () => {
     expect(response.status).toBe(422);
   });
 });
+
