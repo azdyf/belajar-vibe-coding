@@ -15,6 +15,13 @@
       "when": 1792056977052,
       "tag": "0001_shiny_skreet",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "5",
+      "when": 1792058864253,
+      "tag": "0002_fancy_lilith",
+      "breakpoints": true
     }
   ]
 }
