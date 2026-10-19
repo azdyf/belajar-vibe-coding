@@ -111,19 +111,12 @@ export class UsersService {
   }
 
   static async logout(token: string) {
-    // 1. Cek apakah session ada di tabel sessions
-    const [session] = await db
-      .select({ id: sessions.id })
-      .from(sessions)
-      .where(eq(sessions.token, token))
-      .limit(1);
+    // Langsung hapus sesi dan cek apakah ada row yang terhapus (1 query, tanpa race condition)
+    const [result] = await db.delete(sessions).where(eq(sessions.token, token));
 
-    if (!session) {
+    if (result.affectedRows === 0) {
       throw new Error("Unauthorized");
     }
-
-    // 2. Hapus sesi dari database
-    await db.delete(sessions).where(eq(sessions.token, token));
 
     return "OK";
   }

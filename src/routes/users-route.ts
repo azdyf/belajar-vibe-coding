@@ -4,6 +4,19 @@ import { UsersService } from "../services/users-services";
 // Regex sederhana untuk validasi email standar (mendukung domain umum maupun localhost/internal)
 const emailPattern = "^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$|^[^\\s@]+@localhost$";
 
+// Helper function untuk ekstraksi Bearer token dari header Authorization
+export function extractBearerToken(headers: Record<string, string | undefined>): string {
+  const authorization = headers["authorization"];
+  if (!authorization || !authorization.startsWith("Bearer ")) {
+    throw new Error("Unauthorized");
+  }
+  const token = authorization.slice(7).trim();
+  if (!token) {
+    throw new Error("Unauthorized");
+  }
+  return token;
+}
+
 export const usersRoute = new Elysia({ prefix: "/users" })
   .get("/", async () => {
     const data = await UsersService.getAll();
@@ -63,22 +76,7 @@ export const usersRoute = new Elysia({ prefix: "/users" })
   )
   .get("/current", async ({ headers, set }) => {
     try {
-      const authorization = headers["authorization"];
-      if (!authorization || !authorization.startsWith("Bearer ")) {
-        set.status = 401;
-        return {
-          error: "Unauthorized",
-        };
-      }
-
-      const token = authorization.slice(7).trim();
-      if (!token) {
-        set.status = 401;
-        return {
-          error: "Unauthorized",
-        };
-      }
-
+      const token = extractBearerToken(headers);
       const user = await UsersService.getCurrentUser(token);
       return {
         data: user,
@@ -92,22 +90,7 @@ export const usersRoute = new Elysia({ prefix: "/users" })
   })
   .delete("/logout", async ({ headers, set }) => {
     try {
-      const authorization = headers["authorization"];
-      if (!authorization || !authorization.startsWith("Bearer ")) {
-        set.status = 401;
-        return {
-          error: "Unauthorized",
-        };
-      }
-
-      const token = authorization.slice(7).trim();
-      if (!token) {
-        set.status = 401;
-        return {
-          error: "Unauthorized",
-        };
-      }
-
+      const token = extractBearerToken(headers);
       const result = await UsersService.logout(token);
       return {
         data: result,

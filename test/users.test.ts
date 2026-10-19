@@ -4,6 +4,28 @@ import { db } from "../src/db";
 import { users, sessions } from "../src/db/schema";
 import { eq } from "drizzle-orm";
 
+// Shared helper function untuk registrasi dan login user test
+async function registerAndLogin(name: string, email: string, password: string): Promise<string> {
+  await app.handle(
+    new Request("http://localhost/api/users", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name, email, password }),
+    })
+  );
+
+  const loginRes = await app.handle(
+    new Request("http://localhost/api/users/login", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email, password }),
+    })
+  );
+
+  const loginJson: any = await loginRes.json();
+  return loginJson.data;
+}
+
 describe("Users & Sessions API (Elysia + MySQL)", () => {
   const testEmail = "fahmi@localhost";
   const testPassword = "rahasia";
@@ -175,33 +197,7 @@ describe("Users & Sessions API (Elysia + MySQL)", () => {
     let validToken: string;
 
     beforeEach(async () => {
-      // Buat user
-      await app.handle(
-        new Request("http://localhost/api/users", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            name: "fahmi",
-            email: testEmail,
-            password: testPassword,
-          }),
-        })
-      );
-
-      // Login untuk mendapatkan token
-      const loginRes = await app.handle(
-        new Request("http://localhost/api/users/login", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            email: testEmail,
-            password: testPassword,
-          }),
-        })
-      );
-
-      const loginJson: any = await loginRes.json();
-      validToken = loginJson.data;
+      validToken = await registerAndLogin("fahmi", testEmail, testPassword);
     });
 
     it("1. Harus berhasil mendapatkan profil user saat ini dengan token valid", async () => {
@@ -273,33 +269,7 @@ describe("Users & Sessions API (Elysia + MySQL)", () => {
     let validToken: string;
 
     beforeEach(async () => {
-      // Buat user
-      await app.handle(
-        new Request("http://localhost/api/users", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            name: "fahmi",
-            email: testEmail,
-            password: testPassword,
-          }),
-        })
-      );
-
-      // Login untuk mendapatkan token
-      const loginRes = await app.handle(
-        new Request("http://localhost/api/users/login", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            email: testEmail,
-            password: testPassword,
-          }),
-        })
-      );
-
-      const loginJson: any = await loginRes.json();
-      validToken = loginJson.data;
+      validToken = await registerAndLogin("fahmi", testEmail, testPassword);
     });
 
     it("1. Harus berhasil logout dengan token valid (Response: { data: 'OK' }) dan session terhapus", async () => {
